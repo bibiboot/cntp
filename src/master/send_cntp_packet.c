@@ -18,7 +18,6 @@ send_cntp_packet()
 
     //create_timestamp((struct timestamp*)(pkt + CUSTOM_HEADER_LEN + TIMESTAMP_LEN));
 
-
     send_packet(s, &sk, (void *)pkt, CNTP_LEN);
 
     print_cntp_packet(pkt);
