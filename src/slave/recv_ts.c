@@ -1,61 +1,53 @@
 #include "recv_ts.h"
+#include "filter.h"
+#include "packet_print.h"
+
+/*
+ * Print the payload
+ */
+void cntp_packet_handler( struct timestamp recv_kern,
+                          unsigned char *packet, int packet_len )
+{
+    recv_packet_print(packet, packet_len);
+    get_offset(packet, packet_len, recv_kern);
+}
+
 void*
 start_receiver(void *argument)
 {
     struct msghdr msg;
     struct iovec entry;
     struct control control;
-    char *payload;
-    int payload_len = 1024; //[AB] put in config
+
+    unsigned char *packet;
+    int recv_sock_fd;
     struct sockaddr_in from_addr;
-    int ret;
-    int s;
+    struct receiver_arg *arg = (struct receiver_arg*)argument;
+
+    setup_receiver(arg, &recv_sock_fd, &packet, globals.config.packet_len,
+		  &msg, &entry, &control, &from_addr);
+
     int err_packet;
-	int cpkt_pl_len;
-	uint64_t offset;
+    int num_bytes_read;
     struct timeval recv_usr;
-
-    struct custom_packet_header* hdr;
-    struct timestamp recv_s1_kern;
-    struct timestamp s0_ts;
-    struct timestamp *from_packet_kern;
-    struct receiver_arg* arg;
-
-    arg = (struct receiver_arg*)argument;
-
-    setup_receiver(arg, &s, &payload, payload_len, 
-				   &msg, &entry, &control, &from_addr);
-   	while(1)
+    struct timestamp recv_kern;
+    while(1)
     {
-        ret = recv_rawpacket_ts(s, &msg, 0, &err_packet, &recv_s1_kern);
-        if (ret < 0){
+        num_bytes_read = recv_rawpacket_ts(recv_sock_fd, &msg, 0, &err_packet, &recv_kern);
+        if (num_bytes_read < 0){
             printf("Error receiving\n");
             exit(1);
+        } else if(err_packet){
+	    printf("An error packet. Exiting.\n");
+	    exit(1);
+	}
+
+	gettimeofday(&recv_usr, 0);
+
+	if (is_cntp(packet)){
+            cntp_packet_handler( recv_kern, packet, num_bytes_read );
+        } else {
+            /* Drop the packet */
         }
-       	print_drtt_packet((void*)payload); 
-		gettimeofday(&recv_usr, 0);
-        hdr = (struct custom_packet_header*)payload;
-		
-		if(err_packet){
-			printf("Never anticipated an error packet. Exiting.\n");
-			exit(1);
-		}
-		if (IS_SRC_ADDR_MATCH(hdr, arg->my_addr)){
-			printf("Own packet\n");
-			continue;
-		} 
-		if (!IS_CNTP(hdr)){
-			printf("Not CNTP packet\n");
-			continue;
-		}
-		if (!IS_DST_ADDR_MATCH(hdr, arg->my_addr)){
-			//Not destined to me
-			printf("Not destined to me\n");
-			continue;
-		}
-		
-		offset = cal_offset(payload, ret, recv_s1_kern);
-		
    }
 }
-

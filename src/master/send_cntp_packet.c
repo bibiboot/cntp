@@ -1,29 +1,30 @@
 #include "send_cntp_packet.h"
 
-void 
+/*
+ * Append the DRTT to the payload
+ * and send packet. The kernel will
+ * attach the timestamp along the way.
+ */
+void
 send_cntp_packet()
 {
-    int s;
-    void *pkt;
+    unsigned char *pkt = malloc(C_HLEN + TIMESTAMP_LEN);
+    memset(pkt, 0, C_HLEN + TIMESTAMP_LEN);
+
     struct sockaddr_ll sk;
-    
-    pkt = malloc(CUSTOM_HEADER_SZ + (5 * TIMESTAMP_SZ));
-    memset(pkt, 0, DRTT_SZ);
-    
-    s = create_sending_socket(SENDER_INF, &sk);
-    //set_socket_inf(s, SENDER_INF, &sk); //[AB]move "lo" to config
-    
-    populate_header(STRATUM1, STRATUM1, STRATUM0, CNTP_PORT, &pkt);
-    create_timestamp((struct timestamp*)(pkt + CUSTOM_HEADER_SZ));
-    create_timestamp((struct timestamp*)(pkt + CUSTOM_HEADER_SZ + TIMESTAMP_SZ));
-    create_timestamp((struct timestamp*)(pkt + CUSTOM_HEADER_SZ + (2 * TIMESTAMP_SZ)));
-    create_timestamp((struct timestamp*)(pkt + CUSTOM_HEADER_SZ + (3 * TIMESTAMP_SZ)));
-    create_timestamp((struct timestamp*)(pkt + CUSTOM_HEADER_SZ + (4 * TIMESTAMP_SZ)));
-    
-    send_packet(s, &sk, (void *)pkt, CUSTOM_HEADER_SZ + (5 * TIMESTAMP_SZ));
-   
+    int send_sock_fd = create_sending_socket(globals.sender_inf, &sk);
+
+    populate_header(ROUTER_IP, globals.dest_node,
+                    globals.src_node, CNTP_PORT, &pkt);
+
+    //create_timestamp((struct timestamp*)(pkt + C_HLEN));
+    struct timestamp *drtt_st = (struct timestamp *)(pkt + C_HLEN);
+    drtt_st->sec = 0;
+    drtt_st->fsec = atoi("9999");
+
+    send_packet(send_sock_fd, &sk, pkt, C_HLEN + TIMESTAMP_LEN);
+
     //print_drtt_packet(pkt);
     print_drtt_packet_net(pkt);
-    print_timestamp((struct timestamp*)(pkt + CUSTOM_HEADER_SZ));
-
+    print_timestamp((struct timestamp*)(pkt + C_HLEN));
 }

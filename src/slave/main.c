@@ -13,16 +13,12 @@
 int main(int argc, char *argv[])
 {
     struct receiver_arg arg;
+    globals.src_node = atoi(argv[1]);
+    globals.recv_inf = argv[2];
 
-    arg.dev = SENDER_INF;
-    arg.my_addr = STRATUM1;
+    arg.dev = globals.recv_inf;
+    arg.my_addr = globals.src_node;;
     start_receiver((void*)&arg);
 
-     /*
-     * Deprecated
-     * Shifted to raw socket
-     */
-    //start_receiver((void*)&arg);
-    //start_sniffer((void*)&arg);
     return 0;
 }
