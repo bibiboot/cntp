@@ -151,6 +151,7 @@ unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp
         total_drtt            += drtt;
         total_processing_time += ( xmit_timestamp - recv_timestamp );
     }
+    printf("Slave recv timestamp    : %lu\n", slave_recv_timestamp);
 
     printf(KGRN "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
     printf(KRED "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
@@ -158,10 +159,14 @@ unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp
     printf("Total drtt              : %lu\n", total_drtt);
 
     unsigned long total_oneway_delay = total_processing_time + total_drtt/2;
-    unsigned long timestamp_diff     = slave_recv_timestamp - master_xmit_timestamp;
+    //unsigned long timestamp_diff     = slave_recv_timestamp - master_xmit_timestamp;
 
-    unsigned long offset = timestamp_diff - total_oneway_delay;
+    printf("Total Oneway delay      : %lu\n", total_oneway_delay);
+    //printf("Time diff               : %lu\n", timestamp_diff);
+
+    long long offset = (master_xmit_timestamp + total_oneway_delay) - slave_recv_timestamp;
+    printf(KMAG "Offset                  : %lld\n" RESET , offset);
     printf(KRED "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
 
-    return offset;
+    return 0;
 }

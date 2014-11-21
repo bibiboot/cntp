@@ -17,10 +17,9 @@ send_cntp_packet()
     populate_header(ROUTER_IP, globals.dest_node,
                     globals.src_node, CNTP_PORT, &pkt);
 
-    //create_timestamp((struct timestamp*)(pkt + C_HLEN));
     struct timestamp *drtt_st = (struct timestamp *)(pkt + C_HLEN);
     drtt_st->sec = 0;
-    drtt_st->fsec = atoi("9999");
+    drtt_st->fsec = atoi(globals.drtt);
 
     send_packet(send_sock_fd, &sk, pkt, C_HLEN + TIMESTAMP_LEN);
 
