@@ -111,8 +111,8 @@ void recv_packet_print(unsigned char *packet, int packet_len)
 
 /*
  * Print al the DRTT and Xmit timestamp couples
- * Single node   | C_HLEN | DRTT-1 | Xmit-1 |
- * Single router | C_HLEN | DRTT-1 | Xmit-1 | Recv-2 | DRTT-2 | Xmit-2 |
+ * Single node   | C_HLEN | DRTT-1 | Xmit-1 | Recv-2 |
+ * Single router | C_HLEN | DRTT-1 | Xmit-1 | Recv-2 | DRTT-2 | Xmit-2 | Recv-3
  * Two router    | C_HLEN | DRTT-1 | Xmit-1 | Recv-2 | DRTT-2 | Xmit-2 | Recv-3 | DRTT-3 | Xmit-3 |
  */
 unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp recv_kern)
@@ -127,7 +127,8 @@ unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp
     unsigned long xmit_timestamp        = 0;
     unsigned long drtt                  = get_drtt(payload, 0);
     unsigned long master_xmit_timestamp = get_kernel_timestamp(payload, TIMESTAMP_LEN);
-    unsigned long slave_recv_timestamp  = (unsigned long)recv_kern.sec * SECONDS + recv_kern.fsec * NANOSECONDS;
+    unsigned long slave_recv_timestamp  = get_kernel_timestamp(payload, payload_len - TIMESTAMP_LEN);
+    unsigned long user_recv_timestamp  = (unsigned long)recv_kern.sec * SECONDS + recv_kern.fsec * NANOSECONDS;
 
     printf("Drtt                    : %lu\n", drtt);
     printf("Master xmit timestamp   : %lu\n", master_xmit_timestamp);
@@ -136,9 +137,9 @@ unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp
     payload_len -= 2*TIMESTAMP_LEN;
     total_drtt = drtt;
 
-    while(payload_len > 0) {
+    while(payload_len - TIMESTAMP_LEN > 0) {
 
-        recv_timestamp = get_so_timestamp(payload, 0);
+        recv_timestamp = get_kernel_timestamp(payload, 0);
         drtt           = get_drtt(payload, TIMESTAMP_LEN);
         xmit_timestamp = get_kernel_timestamp(payload, 2*TIMESTAMP_LEN);
 
