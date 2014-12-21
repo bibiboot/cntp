@@ -35,7 +35,7 @@ void *start_ipc_client()
         /*
         * Now read what the server put in the memory.
         */
-        printf("Read from memory = %s\n", globals.drtt);
+        //printf("Read from memory = %s\n", globals.drtt);
         //globals.drtt = '*';
 
         sleep(globals.config.ipc_sleep_time);

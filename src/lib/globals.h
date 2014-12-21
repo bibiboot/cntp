@@ -15,6 +15,7 @@
 #include "config.h"
 #include "color.h"
 #include "uthash.h"
+#include "logger.h"
 
 #define TIMESTAMP_LEN 8
 #define C_HLEN        68

@@ -1,7 +1,7 @@
 #pragma once
 
 #define CONFIG_INIT { \
-    .ipc_sleep_time = 15*1, \
+    .ipc_sleep_time = 60*1, \
     .packet_len = 1024, \
     .rtt = 2 ,}
 

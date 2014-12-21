@@ -19,6 +19,5 @@ bool is_cntp(unsigned char *packet)
         ntohs(hdr->dst_port) == CNTP_PORT) {
         return true;
     }
-
     return false;
 }

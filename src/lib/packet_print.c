@@ -53,10 +53,11 @@ unsigned long get_so_timestamp(unsigned char *packet, int offset)
 
 void print_header(unsigned char *packet, int packet_len)
 {
-    printf(KMAG "Total [%d]: Header size [%d]: Payload [%d]: \n" RESET,
-           packet_len, C_HLEN, packet_len - C_HLEN);
+    //printf(KMAG "Total [%d]: Header size [%d]: Payload [%d]: \n" RESET,
+     //      packet_len, C_HLEN, packet_len - C_HLEN);
 
     struct custom_packet_header *hdr = (struct custom_packet_header *)packet;
+    /*
     printf("++++++++++++++++++++++++++++++++++++++\n");
     printf("| NEXT_HOP | SRC_IP | DEST_IP | PORT |\n");
     printf("++++++++++++++++++++++++++++++++++++++\n");
@@ -65,6 +66,7 @@ void print_header(unsigned char *packet, int packet_len)
                                          ntohs(hdr->dst_addr),
                                          ntohs(hdr->dst_port));
     printf("++++++++++++++++++++++++++++++++++++++\n");
+    */
 }
 
 /*
@@ -90,8 +92,8 @@ void recv_packet_print(unsigned char *packet, int packet_len)
         unsigned long drtt           = get_drtt(payload, 0);
         unsigned long xmit_timestamp = get_kernel_timestamp(payload, TIMESTAMP_LEN);
 
-        printf("Drtt             : %lu\n", drtt);
-        printf("Xmit timestamp   : %lu\n", xmit_timestamp);
+        //printf("Drtt             : %lu\n", drtt);
+        //printf("Xmit timestamp   : %lu\n", xmit_timestamp);
         /*
          * Check if recv timestamp also exists
          * If do not exist, then do nothing as
@@ -99,7 +101,7 @@ void recv_packet_print(unsigned char *packet, int packet_len)
          */
         if(payload_len - 3*TIMESTAMP_LEN > 0) {
             unsigned long recv_timestamp = get_so_timestamp(payload, 2* TIMESTAMP_LEN);
-            printf("Recve timestamp  : %lu\n", recv_timestamp);
+            //printf("Recve timestamp  : %lu\n", recv_timestamp);
             payload += 3*TIMESTAMP_LEN;
             payload_len -= 3*TIMESTAMP_LEN;
         } else {
@@ -117,7 +119,10 @@ void recv_packet_print(unsigned char *packet, int packet_len)
  */
 unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp recv_kern)
 {
+    /*
     printf(KGRN "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
+    write_log_msg("++++++++++++++++++++++++++++++++++++++++++++");
+    */
     int payload_len = packet_len - C_HLEN;
     unsigned char *payload = packet + C_HLEN;
 
@@ -130,8 +135,12 @@ unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp
     unsigned long slave_recv_timestamp  = get_kernel_timestamp(payload, payload_len - TIMESTAMP_LEN);
     unsigned long user_recv_timestamp  = (unsigned long)recv_kern.sec * SECONDS + recv_kern.fsec * NANOSECONDS;
 
+    /*
     printf("Drtt                    : %lu\n", drtt);
     printf("Master xmit timestamp   : %lu\n", master_xmit_timestamp);
+    write_log("Drtt                    ", drtt);
+    write_log("Master xmit timestamp   ", master_xmit_timestamp);
+    */
 
     payload     += 2*TIMESTAMP_LEN;
     payload_len -= 2*TIMESTAMP_LEN;
@@ -143,31 +152,45 @@ unsigned long get_offset(unsigned char *packet, int packet_len, struct timestamp
         drtt           = get_drtt(payload, TIMESTAMP_LEN);
         xmit_timestamp = get_kernel_timestamp(payload, 2*TIMESTAMP_LEN);
 
+        /*
         printf("Recve timestamp         : %lu\n", recv_timestamp);
         printf("Drtt                    : %lu\n", drtt);
         printf("Xmit timestamp          : %lu\n", xmit_timestamp);
+        write_log("Recve timestamp         ", recv_timestamp);
+        write_log("Drtt                    ", drtt);
+        write_log("Xmit timestamp          ", xmit_timestamp);
+        */
 
         payload               += 3*TIMESTAMP_LEN;
         payload_len           -= 3*TIMESTAMP_LEN;
         total_drtt            += drtt;
         total_processing_time += ( xmit_timestamp - recv_timestamp );
     }
+    /*
     printf("Slave recv timestamp    : %lu\n", slave_recv_timestamp);
+    write_log("Slave recv timestamp    ", slave_recv_timestamp);
 
     printf(KGRN "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
     printf(KRED "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
+    write_log_msg("--------------------------------------------");
     printf("Total processing time   : %lu\n", total_processing_time);
     printf("Total drtt              : %lu\n", total_drtt);
+    write_log("Total processing time   ", total_processing_time);
+    write_log("Total drtt              ", total_drtt);
+    */
 
     unsigned long total_oneway_delay = total_processing_time + total_drtt/2;
-    //unsigned long timestamp_diff     = slave_recv_timestamp - master_xmit_timestamp;
 
-    printf("Total Oneway delay      : %lu\n", total_oneway_delay);
-    //printf("Time diff               : %lu\n", timestamp_diff);
+    //printf("Total Oneway delay      : %lu\n", total_oneway_delay);
+    //write_log("Total Oneway delay      ", total_oneway_delay);
 
     long long offset = (master_xmit_timestamp + total_oneway_delay) - slave_recv_timestamp;
-    printf(KMAG "Offset                  : %lld\n" RESET , offset);
-    printf(KRED "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
+    //printf(KMAG "Offset                  : %lld\n" RESET , offset);
+    //write_log_sign("Offset                  ", offset);
+    //write_log_msg("++++++++++++++++++++++++++++++++++++++++++++");
+    //printf(KRED "++++++++++++++++++++++++++++++++++++++++++++++++\n" RESET);
+    printf("%lu\t%.9f", slave_recv_timestamp, (float)(offset)/1000000);
+    fflush(stdout);
 
     return 0;
 }
